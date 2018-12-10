@@ -1,0 +1,30 @@
+{
+    "AppSettings":
+    {
+        "RpcUrl": "http://40.121.95.122:8545",
+    },
+    "ExclusionAddresses":
+    [
+        {
+            "Address": "0x8d12A197cB00D4747a1fe03395095ce2A5CC6819",
+            "Notes": "EtherDelta"
+        },
+        {
+            "Address": "0x0000000000000000000000000000000000000000",
+            "Notes": "Burned tokens"
+        }
+    ],
+    "Redirections":
+    [
+        {
+            "From": "0x5d5a2786809f07c164095cacf34d6c25916fb45a",
+            "To": "0x0299469fDB8EA59413ad237F29bfdD219B2c77CB",
+            "Notes": "Account Hacked"
+        },
+        {
+            "From": "0xea3a8bD1a99E16160832D6b473CE06C1058dFF7e",
+            "To": "0x84080e4952af908f29a95aaea58fbf6416afa318",
+            "Notes": "Account Hacked"
+        }
+    ]
+}
