@@ -177,7 +177,6 @@ namespace Sift.DividendPayer
             {
                 decimal dividendAmount = amountPerSift * recipient.Balance;
                 Console.WriteLine(recipient.Address + " has " + recipient.Balance + " SIFT.  Dividend: " + dividendAmount);
-                string txId = "[dummy]";
                 try
                 {
                     // Do the real send here
@@ -185,17 +184,16 @@ namespace Sift.DividendPayer
                     Console.WriteLine("Send amount: " + sendAmount);
                     Console.WriteLine("Gas Price: " + gasPrice);
                     string transaction = new Nethereum.Signer.TransactionSigner().SignTransaction(privateKey, recipient.Address, sendAmount, nonce, gasPrice, 21000);
-                    txId = new Nethereum.Util.Sha3Keccack().CalculateHashFromHex(transaction);
+                    string txId = new Nethereum.Util.Sha3Keccack().CalculateHashFromHex(transaction);
                     if (!isDummy)
                         txId = _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync(transaction).Result;
-                    
+                    Console.WriteLine("Sent with txid = " + txId);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine("Failed send: " + ex.Message);
                 }
                 nonce++;
-                Console.WriteLine("Sent with txid = " + txId);
             }
         }
 
