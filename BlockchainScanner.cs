@@ -31,8 +31,8 @@ namespace Sift.DividendPayer
             Console.WriteLine("Last eligible block was " + blockForTime);
 
             // Now we want to determine holders of old SIFT and new SIFT
-            List<SnapshotItem> siftHolders = GetHoldersForContract("0x8a187d5285d316bcbc9adafc08b51d70a0d8e000", 4102075, 0);
-            List<SnapshotItem> xsftHolders = GetHoldersForContract("0x1d074266bca9481bdeee504836cfefee69092a28", 5242598, 6);
+            List<SnapshotItem> siftHolders = GetHoldersForContract("0x8a187d5285d316bcbc9adafc08b51d70a0d8e000", 4102075, blockForTime, 0);
+            List<SnapshotItem> xsftHolders = GetHoldersForContract("0x1d074266bca9481bdeee504836cfefee69092a28", 5242598, blockForTime, 6);
             SnapshotItem hotWallet = xsftHolders.FirstOrDefault(si => si.Address == "0x43b0eb4dfe7a3a86b4805b6db07e80c285b54553");
             if (hotWallet != null)
                 hotWallet.Balance -= 1122; // Fixes issue where we over-issued some SIFT
@@ -54,17 +54,16 @@ namespace Sift.DividendPayer
             return finalList.OrderByDescending(item => item.Balance).ToList();
         }
 
-        private List<SnapshotItem> GetHoldersForContract(string contract, ulong fromHeight, int decimals)
+        private List<SnapshotItem> GetHoldersForContract(string contract, ulong fromHeight, ulong lastBlock, int decimals)
         {
-            ulong currentBlock = ulong.Parse(_web3.Eth.Blocks.GetBlockNumber.SendRequestAsync().Result.Value.ToString());
-            Console.WriteLine("Checking " + contract + " from " + fromHeight + " to " + currentBlock);
+            Console.WriteLine("Checking " + contract + " from " + fromHeight + " to " + lastBlock);
             const string contractAbi = "[{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"success\",\"type\":\"bool\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_from\",\"type\":\"address\"},{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"balance\",\"type\":\"uint256\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_index\",\"type\":\"uint256\"}],\"name\":\"tokenHolder\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"icoContractAddress\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"contractVersion\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"isClosed\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"tokenHolderCount\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"},{\"name\":\"_spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"remaining\",\"type\":\"uint256\"}],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"mintTokens\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"inputs\":[{\"name\":\"_icoContractAddress\",\"type\":\"address\"},{\"name\":\"_authenticationManagerAddress\",\"type\":\"address\"}],\"payable\":false,\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"FundClosed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"_owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"_spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"}]";
             Contract ethContract = _web3.Eth.GetContract(contractAbi, contract);
             Event transferEvent = ethContract.GetEvent("Transfer");
 
             ulong startBlock = fromHeight;
             Dictionary<string, decimal> balances = new Dictionary<string, decimal>();
-            while (startBlock < currentBlock)
+            while (startBlock < lastBlock)
             {
                 List<EventLog<Erc20TransferEvent>> transferEventLogs = null;
                 int tryCount = 0;
@@ -75,8 +74,8 @@ namespace Sift.DividendPayer
                     {
                         tryCount++;
                         endBlock = startBlock + (ulong)increment;
-                        if (endBlock > currentBlock)
-                            endBlock = currentBlock;
+                        if (endBlock > lastBlock)
+                            endBlock = lastBlock;
                         HexBigInteger filterId = transferEvent.CreateFilterAsync(null, fromBlock: new BlockParameter(startBlock), toBlock: new BlockParameter(endBlock)).Result;
                         Console.WriteLine("Scanning from " + startBlock + " to " + endBlock);
                         transferEventLogs = transferEvent.GetAllChanges<Erc20TransferEvent>(filterId).Result;
