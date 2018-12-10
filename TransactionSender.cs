@@ -177,21 +177,37 @@ namespace Sift.DividendPayer
             {
                 decimal dividendAmount = amountPerSift * recipient.Balance;
                 Console.WriteLine(recipient.Address + " has " + recipient.Balance + " SIFT.  Dividend: " + dividendAmount);
-                try
+                BigInteger sendAmount = UnitConversion.Convert.ToWei(dividendAmount);
+                string transaction = new Nethereum.Signer.TransactionSigner().SignTransaction(privateKey, recipient.Address, sendAmount, nonce, gasPrice, 21000);
+                string txId = new Nethereum.Util.Sha3Keccack().CalculateHashFromHex(transaction);
+                if (!isDummy)
                 {
-                    // Do the real send here
-                    BigInteger sendAmount = UnitConversion.Convert.ToWei(dividendAmount);
-                    Console.WriteLine("Send amount: " + sendAmount);
-                    Console.WriteLine("Gas Price: " + gasPrice);
-                    string transaction = new Nethereum.Signer.TransactionSigner().SignTransaction(privateKey, recipient.Address, sendAmount, nonce, gasPrice, 21000);
-                    string txId = new Nethereum.Util.Sha3Keccack().CalculateHashFromHex(transaction);
-                    if (!isDummy)
+                    try
+                    {
                         txId = _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync(transaction).Result;
-                    Console.WriteLine("Sent with txid = " + txId);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Failed send: " + ex.Message);
+                        Console.WriteLine("Sent with txid = " + txId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Failed send: " + ex.Message);
+                    }
+                    try
+                    {
+                        WebRequest request = WebRequest.Create("https://api.etherscan.io/api?module=proxy&action=eth_sendRawTransaction&hex=0x" + transaction + "&apikey=YourApiKeyToken");
+                        request.Method = "GET";
+                        using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                        using (Stream dataStream = response.GetResponseStream())
+                        using (StreamReader streamReader = new StreamReader(dataStream))
+                        {
+                            Console.WriteLine(json);
+                            if (response.StatusCode != HttpStatusCode.OK)
+                                throw new Exception("Etherscan gave us a " + response.StatusCode);
+                        }
+                    }
+                    catch
+                    {
+                        // We're quiet here
+                    }
                 }
                 nonce++;
             }
