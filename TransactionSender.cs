@@ -199,7 +199,6 @@ namespace Sift.DividendPayer
                         using (Stream dataStream = response.GetResponseStream())
                         using (StreamReader streamReader = new StreamReader(dataStream))
                         {
-                            Console.WriteLine(json);
                             if (response.StatusCode != HttpStatusCode.OK)
                                 throw new Exception("Etherscan gave us a " + response.StatusCode);
                         }
