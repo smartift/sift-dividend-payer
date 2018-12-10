@@ -152,7 +152,7 @@ namespace Sift.DividendPayer
             Console.WriteLine("    ETH per SIFT:           " + amountPerSift);
             Console.WriteLine("    From:                   " + sendingAddress);
             Console.WriteLine("    Nonce:                  " + nonce);
-            Console.WriteLine("    Gas Price:              " + ((decimal)gasPrice / 10000000000m)  + " Gwei");
+            Console.WriteLine("    Gas Price:              " + ((decimal)gasPrice / 1000000000m)  + " Gwei");
             bool isDummy = false;
             while (true)
             {
