@@ -54,7 +54,8 @@ namespace Sift.DividendPayer
                     Console.WriteLine("Invalid selection");
                     break;
             }
-            if (c == '0') {
+            if (c == '0')
+            {
                 ShouldExit = true;
                 return;
             }
@@ -68,7 +69,7 @@ namespace Sift.DividendPayer
             DateTime scanDate;
             while (true)
             {
-                Console.Write("    Timestamp (GMT): [" + suggested.ToString("yyyy-MM-dd HH:mm:ss") +"] " );
+                Console.Write("    Timestamp (GMT): [" + suggested.ToString("yyyy-MM-dd HH:mm:ss") + "] ");
                 string readDate = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(readDate))
                 {
@@ -76,13 +77,18 @@ namespace Sift.DividendPayer
                     break;
                 }
                 if (DateTime.TryParse(readDate, out scanDate))
-                    break;
+                {
+                    if (scanDate > DateTime.UtcNow)
+                        Console.WriteLine("Date is in future, cannot snapshot yet");
+                    else
+                        break;
+                }
                 else
                     Console.WriteLine("Invalid date format");
             }
             string defaultFile = GetDefaultFilename(scanDate);
             string outputFile;
-            Console.Write("    Filename: [" + defaultFile + "] " );
+            Console.Write("    Filename: [" + defaultFile + "] ");
             string readFile = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(readFile))
                 outputFile = defaultFile;
@@ -138,7 +144,10 @@ namespace Sift.DividendPayer
         private static DateTime GetDefaultDate()
         {
             DateTime now = DateTime.UtcNow;
-            return new DateTime(now.Year, now.Month, now.Day, 10, 0, 0, DateTimeKind.Utc);
+            DateTime d = new DateTime(now.Year, now.Month, now.Day, 10, 0, 0, DateTimeKind.Utc);
+            if (d > DateTime.UtcNow)
+                d = d.AddDays(-1);
+            return d;
         }
 
         private static string GetDefaultFilename(DateTime scanDate)
@@ -224,7 +233,7 @@ namespace Sift.DividendPayer
             while (true)
             {
                 Console.Write("Output: ");
-                outputFile  = Console.ReadLine();
+                outputFile = Console.ReadLine();
                 if (string.IsNullOrEmpty(outputFile))
                     Console.WriteLine("File not specified");
                 else

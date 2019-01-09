@@ -115,8 +115,8 @@ namespace Sift.DividendPayer
         private ulong GetBlockBeforeTime(DateTime date)
         {
             ulong currentBlock = ulong.Parse(_web3.Eth.Blocks.GetBlockNumber.SendRequestAsync().Result.Value.ToString());
-            Console.WriteLine("Current block is " + currentBlock);
             ulong checkBlock = currentBlock - (ulong)(DateTime.UtcNow.Subtract(date).TotalSeconds / 14);
+            Console.WriteLine("Current block is " + currentBlock + " checking " + checkBlock);
 
             // Keep moving bakc until we're behind the target date
             BlockWithTransactionHashes block = _web3.Eth.Blocks.GetBlockWithTransactionsHashesByNumber.SendRequestAsync(new HexBigInteger((BigInteger)checkBlock)).Result;
@@ -124,27 +124,46 @@ namespace Sift.DividendPayer
                 throw new Exception("Unable to load block " + checkBlock);
             DateTime blockDate = GetDate((ulong)block.Timestamp.Value);
             int count = 0;
+            ulong lastAdjustment = 0;
+            int bounceCount = 0;
+            bool wasLastAdjustmentForward = false;
             while (true)
             {
                 count++;
-                bool doLog = count % 10 == 0;
+                bool doLog = true;//count % 10 == 0;
                 if (blockDate > date)
                 {
                     TimeSpan differenceFromTarget = blockDate.Subtract(date);
                     if (doLog)
                         Console.WriteLine("Start point of " + checkBlock + " was too far in front, moving back");
                     ulong adjustment = (ulong)(differenceFromTarget.TotalSeconds / 9);
+                    if (adjustment == lastAdjustment)
+                        adjustment += 2;
+                    lastAdjustment = adjustment;
                     checkBlock -= adjustment;
+                    if (wasLastAdjustmentForward)
+                        bounceCount++;
+                    else
+                        bounceCount = 0;
+                    wasLastAdjustmentForward = false;
                 }
                 else if (blockDate < date)
                 {
                     TimeSpan differenceFromTarget = date.Subtract(blockDate);
                     // If within a 10 minute window break, otherwise adjust start point
-                    if (differenceFromTarget.TotalSeconds < 600)
+                    if (differenceFromTarget.TotalSeconds < 600 || bounceCount > 5)
                         break;
                     if (doLog)
                         Console.WriteLine("Start point of " + checkBlock + " was too far behind, moving forward");
                     ulong adjustment = (ulong)(differenceFromTarget.TotalSeconds / 7);
+                    if (adjustment == lastAdjustment)
+                        adjustment -= 3;
+                    if (!wasLastAdjustmentForward)
+                        bounceCount++;
+                    else
+                        bounceCount = 0;
+                    wasLastAdjustmentForward = true;
+                    lastAdjustment = adjustment;
                     checkBlock += adjustment;
                 }
                 block = _web3.Eth.Blocks.GetBlockWithTransactionsHashesByNumber.SendRequestAsync(new HexBigInteger((BigInteger)checkBlock)).Result;
