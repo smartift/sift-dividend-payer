@@ -1,7 +1,7 @@
 {
     "AppSettings":
     {
-        "RpcUrl": "http://zap-npt-cn-01.zapple.com:8545"
+        "RpcUrl": "http://40.121.95.122:8545"
     },
     "ExclusionAddresses":
     [
