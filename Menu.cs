@@ -152,7 +152,7 @@ namespace Sift.DividendPayer
 
         private static string GetDefaultFilename(DateTime scanDate)
         {
-            return "sift-snapshot-" + scanDate.ToString("yyyy-MM-dd_HH:mm:ss") + ".csv";
+            return "sift-snapshot-" + scanDate.ToString("yyyy-MM-dd_HHmmss") + ".csv";
         }
 
         private void DisplayPayDividends()
