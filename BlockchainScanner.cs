@@ -120,6 +120,8 @@ namespace Sift.DividendPayer
 
             // Keep moving bakc until we're behind the target date
             BlockWithTransactionHashes block = _web3.Eth.Blocks.GetBlockWithTransactionsHashesByNumber.SendRequestAsync(new HexBigInteger((BigInteger)checkBlock)).Result;
+            if (block == null)
+                throw new Exception("Unable to load block " + checkBlock);
             DateTime blockDate = GetDate((ulong)block.Timestamp.Value);
             int count = 0;
             while (true)
